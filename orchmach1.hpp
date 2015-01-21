@@ -117,293 +117,359 @@ Version history
 #include <ctime>
 #include <limits>
 #include <iomanip>
+#ifdef DEBUG_SEL_MACHINE
+#include <map>
+#include <algorithm>
+#endif
 
 template <int M>
-class TransitionRules {
+class TransitionRules
+{
 
 public:
 
-     int from[M*2][2];
-     int to[M*2*3][3];
+  int from[M*2][2];
+  int to[M*2*3][3];
 
-     TransitionRules() {
+  TransitionRules()
+  {
 
-          for ( int i ( 0 ); i<M; ++i ) {
+    for ( int i ( 0 ); i<M; ++i )
+      {
 
-               // (state, read) ->
-               for ( int j ( 0 ); j<2; ++j ) {
-                    from[2*i+j][0] = i;
-                    from[2*i+j][1] = j;
-               }
-
-               // -> (state, write, move)
-               for ( int j ( 0 ); j<2; ++j )
-                    for ( int k ( 0 ); k<3; ++k ) {
-                         to[6*i+j*3+k][0] = i;
-                         to[6*i+j*3+k][1] = j;
-                         to[6*i+j*3+k][2] = k;
-                    }
-          }
-     }
-
-     friend std::ostream & operator<< ( std::ostream & os, TransitionRules<M> & tr ) {
-
-          for ( int i ( 0 ); i<M; ++i ) {
-
-               // (state, read) ->
-               for ( int j ( 0 ); j<2; ++j ) {
-                    std::cout << tr.from[2*i+j][0];
-                    std::cout << " ";
-                    std::cout << tr.from[2*i+j][1];
-                    std::cout << std::endl;
-               }
-
-               // -> (state, write, move)
-               for ( int j ( 0 ); j<2; ++j )
-                    for ( int k ( 0 ); k<3; ++k ) {
-                         std::cout << tr.to[6*i+j*3+k][0];
-                         std::cout << " ";
-                         std::cout << tr.to[6*i+j*3+k][1];
-                         std::cout << " ";
-                         std::cout << tr.to[6*i+j*3+k][2];
-                         std::cout << std::endl;
-                    }
-
+        // (state, read) ->
+        for ( int j ( 0 ); j<2; ++j )
+          {
+            from[2*i+j][0] = i;
+            from[2*i+j][1] = j;
           }
 
-          return os;
-     }
+        // -> (state, write, move)
+        for ( int j ( 0 ); j<2; ++j )
+          for ( int k ( 0 ); k<3; ++k )
+            {
+              to[6*i+j*3+k][0] = i;
+              to[6*i+j*3+k][1] = j;
+              to[6*i+j*3+k][2] = k;
+            }
+      }
+  }
+
+  friend std::ostream & operator<< ( std::ostream & os, TransitionRules<M> & tr )
+  {
+
+    for ( int i ( 0 ); i<M; ++i )
+      {
+
+        // (state, read) ->
+        for ( int j ( 0 ); j<2; ++j )
+          {
+            std::cout << tr.from[2*i+j][0];
+            std::cout << " ";
+            std::cout << tr.from[2*i+j][1];
+            std::cout << std::endl;
+          }
+
+        // -> (state, write, move)
+        for ( int j ( 0 ); j<2; ++j )
+          for ( int k ( 0 ); k<3; ++k )
+            {
+              std::cout << tr.to[6*i+j*3+k][0];
+              std::cout << " ";
+              std::cout << tr.to[6*i+j*3+k][1];
+              std::cout << " ";
+              std::cout << tr.to[6*i+j*3+k][2];
+              std::cout << std::endl;
+            }
+
+      }
+
+    return os;
+  }
 
 };
 
 template <long M>
-class Tape {
+class Tape
+{
 
 public:
 
-     char* tape;
-     long tapei {0L};
+  char* tape;
+  long tapei {0L};
 
-     Tape() {
+  Tape()
+  {
 
-          tape = new char[M];
-          clear();
+    tape = new char[M];
+    clear();
 
-     }
+  }
 
-     void clear ( void ) {
+  void clear ( void )
+  {
 
-          memset ( ( void * ) tape, 0, M*sizeof ( char ) );
-     }
+    memset ( ( void * ) tape, 0, M*sizeof ( char ) );
+  }
 
-     void clear ( long from, long to ) {
+  void clear ( long from, long to )
+  {
 
-          memset ( ( void * ) ( tape+M/2-from/8-4 ), 0, from/8+to/8+8 );
+    memset ( ( void * ) ( tape+M/2-from/8-4 ), 0, from/8+to/8+8 );
 
-     }
+  }
 
-     int
-     get_tape ( long tapei ) {
+  int
+  get_tape ( long tapei )
+  {
 
-          long bytei = tapei / 8;
-          int biti = tapei % 8;
+    long bytei = tapei / 8;
+    int biti = tapei % 8;
 
-          char value = 0x01;
+    char value = 0x01;
 
-          value = ( value & ( tape[bytei] >> ( 8 - biti - 1 ) ) );
+    value = ( value & ( tape[bytei] >> ( 8 - biti - 1 ) ) );
 
-          return value;
-     }
+    return value;
+  }
 
-     void
-     set_tape ( long xth, int value ) {
+  void
+  set_tape ( long xth, int value )
+  {
 
-          long bytei = xth / 8;
-          int biti = xth % 8;
+    long bytei = xth / 8;
+    int biti = xth % 8;
 
-          if ( value == 0x00 ) {
-               // set x-th. bit to 0
-               value = 0x01;
-               value <<= ( 8 - biti - 1 );
-               value = ( char ) ~value;
-               tape[bytei] &= value;
+    if ( value == 0x00 )
+      {
+        // set x-th. bit to 0
+        value = 0x01;
+        value <<= ( 8 - biti - 1 );
+        value = ( char ) ~value;
+        tape[bytei] &= value;
 
-          } else {
-               // set x-th. bit to 1
-               value = 0x01;
-               value <<= ( 8 - biti - 1 );
-               tape[bytei] |= value;
+      }
+    else
+      {
+        // set x-th. bit to 1
+        value = 0x01;
+        value <<= ( 8 - biti - 1 );
+        tape[bytei] |= value;
 
-          }
-     }
+      }
+  }
 
-     friend std::ostream & operator<< ( std::ostream & os, Tape<M> & t ) {
+  friend std::ostream & operator<< ( std::ostream & os, Tape<M> & t )
+  {
 
-          std::cout << t.tapei;
+    std::cout << t.tapei;
 
-          return os;
-     }
+    return os;
+  }
 
-     ~Tape() {
-          delete[] tape;
-     }
+  ~Tape()
+  {
+    delete[] tape;
+  }
 
 };
 
 template <int M>
-class TuringMachine {
+class TuringMachine
+{
 
 public:
 
 #ifdef HPC
-     static constexpr long MAX_STEPS =   3.5*2147483648L;
-     static constexpr long NOF_CELLS = ( 2*MAX_STEPS+32 ) /8; //1792M
+  static constexpr long MAX_STEPS =   3.5*2147483648L;
+  static constexpr long NOF_CELLS = ( 2*MAX_STEPS+32 ) /8; //1792M
 #else
-     static constexpr long MAX_STEPS =   8*2147483648L;
-     static constexpr long NOF_CELLS = ( 2*MAX_STEPS+32 ) /8; //4096M
+  static constexpr long MAX_STEPS =   8*2147483648L;
+  static constexpr long NOF_CELLS = ( 2*MAX_STEPS+32 ) /8; //4096M
 #endif
 
-     static TransitionRules<M> rules;
-     static Tape<NOF_CELLS> tape;
+  static TransitionRules<M> rules;
+  static Tape<NOF_CELLS> tape;
 
-     int astep[M*2];
-     int machine[M*2][5];
+  int astep[M*2];
+  int machine[M*2][5];
 
-     int state {0};
+  int state {0};
 
-     long nr_ones[4] = {0L, 0L, 0L, 0L};
-     long nof_dirs[3] = {0L, 0L, 0L};
+  long nr_ones[4] = {0L, 0L, 0L, 0L};
+  long nof_dirs[3] = {0L, 0L, 0L};
 
-     int nof {0};
+  int nof {0};
 
 #ifdef STATES_OM3
-     bool states[M] = {false, false, false};
+  bool states[M] = {false, false, false};
 #endif
 
-     TuringMachine () {}
+  TuringMachine () {}
 
-     TuringMachine ( int nof, ... );
+  TuringMachine ( int nof, ... );
 
-     friend std::ostream & operator<< ( std::ostream & os, TuringMachine<M> & tm ) {
+  friend std::ostream & operator<< ( std::ostream & os, TuringMachine<M> & tm )
+  {
 
-          std::cout << "(" << tm.nof;
+    std::cout << "(" << tm.nof;
 
-          for ( int i ( 0 ); i<tm.nof; ++i ) {
-
-
-               for ( int f ( 0 ); f<M*2; ++f )
-                    if ( tm.machine[i][0] == rules.from[f][0]
-                              && tm.machine[i][1] == rules.from[f][1] ) {
-                         std::cout << ", "<< f;
-                         break;
-                    }
+    for ( int i ( 0 ); i<tm.nof; ++i )
+      {
 
 
-               for ( int t ( 0 ); t<M*2*3; ++t )
+        for ( int f ( 0 ); f<M*2; ++f )
+          if ( tm.machine[i][0] == rules.from[f][0]
+               && tm.machine[i][1] == rules.from[f][1] )
+            {
+              std::cout << ", "<< f;
+              break;
+            }
 
-                    if ( tm.machine[i][2] == rules.to[t][0]
-                              && tm.machine[i][3] == rules.to[t][1]
-                              && tm.machine[i][4] == rules.to[t][2] ) {
-                         std::cout << ", "<< t;
-                         break;
-                    }
 
-          }
-          std::cout << ")" << std::endl;
+        for ( int t ( 0 ); t<M*2*3; ++t )
 
-          for ( int i = 0; i < tm.nof; ++i ) {
+          if ( tm.machine[i][2] == rules.to[t][0]
+               && tm.machine[i][3] == rules.to[t][1]
+               && tm.machine[i][4] == rules.to[t][2] )
+            {
+              std::cout << ", "<< t;
+              break;
+            }
 
-               std::cout << "(" << tm.machine[i][0]
-                         << "," << tm.machine[i][1]
-                         << ")->(" << tm.machine[i][2]
-                         << "," << tm.machine[i][3]
-                         << "," << tm.machine[i][4]
-                         << ")" << std::endl;
+      }
+    std::cout << ")";
 
-          }
+#ifndef DEBUG_SEL_MACHINE
 
-          return os;
-     }
+    std::cout << std::endl;
+    for ( int i = 0; i < tm.nof; ++i )
+      {
 
-     virtual long start ( void );
+        std::cout << "(" << tm.machine[i][0]
+                  << "," << tm.machine[i][1]
+                  << ")->(" << tm.machine[i][2]
+                  << "," << tm.machine[i][3]
+                  << "," << tm.machine[i][4]
+                  << ")" << std::endl;
+
+      }
+#endif
+
+    return os;
+  }
+
+  virtual long start ( void );
 
 };
 
 
 template <int M>
-class OrchMach1 : public TuringMachine<M> {
+class OrchMach1 : public TuringMachine<M>
+{
 
-     std::list<TuringMachine<M>*> TMs;
-     std::list<TuringMachine<M>*> TMscopy;
+  std::list<TuringMachine<M>*> TMs;
+  std::list<TuringMachine<M>*> TMscopy;
 
-     long N {0L};
-     double o2 {0.0};
-     long nof1s {0L};
+  long N {0L};
+  double o2 {0.0};
+  long nof1s {0L};
 
 public:
 
-#ifdef DEBUG_SEL
-     bool log {false};
+#ifdef DEBUG_SEL_MACHINE
+  std::map<TuringMachine<M>*, size_t> smachs;
+  std::map<TuringMachine<M>*, size_t> smachscopy;
 #endif
 
-     OrchMach1 ( int nof, ... ) {
+#ifdef DEBUG_SEL_RULE
+  bool log {false};
+#endif
 
-          va_list vap;
+  OrchMach1 ( int nof, ... )
+  {
 
-          va_start ( vap, nof );
+    va_list vap;
 
-          for ( int i ( 0 ); i < nof; ++i ) {
-               TMs.push_back ( va_arg ( vap, TuringMachine<M>* ) );
-          }
+    va_start ( vap, nof );
 
-          va_end ( vap );
+    for ( int i ( 0 ); i < nof; ++i )
+      {
+        TMs.push_back ( va_arg ( vap, TuringMachine<M>* ) );
+      }
+
+    va_end ( vap );
 
 #ifdef DEBUG_RND
-          int t = 1413408464;
+    int t = 1413408464;
 #elif HPC_RND
-          int t = std::time ( NULL );
-          if ( std::getenv ( "SLURM_ARRAY_TASK_ID" ) )
-               t += std::atoi ( std::getenv ( "SLURM_ARRAY_TASK_ID" ) ) ;
+    int t = std::time ( NULL );
+    if ( std::getenv ( "SLURM_ARRAY_TASK_ID" ) )
+      t += std::atoi ( std::getenv ( "SLURM_ARRAY_TASK_ID" ) ) ;
 #else
-          int t = std::time ( NULL );
+    int t = std::time ( NULL );
 #endif
-          std::srand ( t );
-          std::cout  << "srand: " << t << std::endl;
-          std::cout  << "sizeof long: " << sizeof ( 1L ) << std::endl;
-          std::cout  << "tape length: " << TuringMachine<M>::NOF_CELLS * 8 << " ("
-                     << ( TuringMachine<M>::NOF_CELLS / 1024 ) / 1024 << " MBytes)" <<  std::endl;
-          std::cout  << "steps limit: " << TuringMachine<M>::MAX_STEPS << std::endl;
+    std::srand ( t );
+    std::cout  << "srand: " << t << std::endl;
+    std::cout  << "sizeof long: " << sizeof ( 1L ) << std::endl;
+    std::cout  << "tape length: " << TuringMachine<M>::NOF_CELLS * 8 << " ("
+               << ( TuringMachine<M>::NOF_CELLS / 1024 ) / 1024 << " MBytes)" <<  std::endl;
+    std::cout  << "steps limit: " << TuringMachine<M>::MAX_STEPS << std::endl;
 
-          for ( typename std::list<TuringMachine<M>*>::iterator it=TMs.begin(); it != TMs.end(); ++it ) {
+    for ( typename std::list<TuringMachine<M>*>::iterator it=TMs.begin(); it != TMs.end(); ++it )
+      {
 
-               std::cout  << *it << std::endl;
-               std::cout  << **it << std::endl;
+        std::cout  << *it << std::endl;
+        std::cout  << **it << std::endl;
 
-          }
+      }
 
-          TMscopy = TMs;
+    TMscopy = TMs;
 
-     }
+  }
 
-     void start ( long& N, double& o2, long& nof1s ) {
-          start();
-          N = this->N;
-          o2 = this->o2;
-          nof1s = this->nof1s;
-     }
+#ifdef DEBUG_SEL_MACHINE
 
-     long start ( void );
-     void experiment ( void );
+  bool contains ( TuringMachine<M>* m )
+  {
+    return std::find ( TMscopy.begin(), TMscopy.end(), m ) != TMscopy.end();
+  }
 
-     friend std::ostream & operator<< ( std::ostream & os, OrchMach1<M> & om1 ) {
+  void del ( TuringMachine<M>* m )
+  {
+    TMs.erase ( std::remove ( std::begin ( TMs ), std::end ( TMs ), m ), std::end ( TMs ) );
+    TMscopy.erase ( std::remove ( std::begin ( TMscopy ), std::end ( TMscopy ), m ), std::end ( TMscopy ) );
+  }
+  void add ( TuringMachine<M>* m )
+  {
+    TMs.push_back ( m );
+    TMscopy.push_back ( m );
 
-          std::cout << std::setprecision ( std::numeric_limits<double>::digits10 )
-                    << "o2= " << om1.o2
-                    << " N= " << om1.N
-                    << " 1s= " << om1.nof1s << std::endl;
-          ;
+    smachscopy.clear();
+  }
+#endif
 
-     }
+  void start ( long& N, double& o2, long& nof1s )
+  {
+    start();
+    N = this->N;
+    o2 = this->o2;
+    nof1s = this->nof1s;
+  }
+
+  long start ( void );
+  TuringMachine<M>* experiment ( void );
+
+  friend std::ostream & operator<< ( std::ostream & os, OrchMach1<M> & om1 )
+  {
+
+    std::cout << std::setprecision ( std::numeric_limits<double>::digits10 )
+              << "o2= " << om1.o2
+              << " N= " << om1.N
+              << " 1s= " << om1.nof1s << std::endl;
+    ;
+
+  }
 
 };
 
@@ -413,282 +479,392 @@ template <int M> Tape<TuringMachine<M>::NOF_CELLS> TuringMachine< M >::tape;
 template <int M> long OrchMach1< M >::start ( void )
 {
 
-     this->nof_dirs[0] = this->nof_dirs[1] = this->nof_dirs[2] = 0L;
-     this->nr_ones[0] = this->nr_ones[1] = this->nr_ones[2] = this->nr_ones[3] = 0L;
+  this->nof_dirs[0] = this->nof_dirs[1] = this->nof_dirs[2] = 0L;
+  this->nr_ones[0] = this->nr_ones[1] = this->nr_ones[2] = this->nr_ones[3] = 0L;
 
-     TuringMachine<M>::tape.tapei = ( TuringMachine<M>::NOF_CELLS * 8 ) / 2;
-     this->state = 0;
+  TuringMachine<M>::tape.tapei = ( TuringMachine<M>::NOF_CELLS * 8 ) / 2;
+  this->state = 0;
 
-     TMs = TMscopy;
+  TMs = TMscopy;
 
-     for ( typename std::list<TuringMachine<M>*>::iterator it=TMs.begin(); it != TMs.end(); ++it ) {
+  for ( typename std::list<TuringMachine<M>*>::iterator it=TMs.begin(); it != TMs.end(); ++it )
+    {
 
-          ( *it )->state = 0;
+      ( *it )->state = 0;
 
-     }
+    }
 
-#ifdef DEBUG_SEL
-     std::vector<std::pair<int,TuringMachine<M>*>> tois ( 10 );
-     long logc {500L};
-     if ( log )
-          std::cout << "START SEL" << std::endl;
-#else
-     std::vector<int> tois ( 10 );
+#ifdef DEBUG_SEL_MACHINE
+  smachs.clear();
 #endif
 
-     int toi {0};
-
-     long s {0}, sumo {0};
-
-     for ( ; s < TuringMachine<M>::MAX_STEPS && !TMs.empty(); ++s ) {
-
-          tois.clear();
-
-          typename std::list<TuringMachine<M>*>::iterator it=TMs.begin();
-          while ( it != TMs.end() ) {
-
-               toi = ( *it )->astep[ ( *it )->state * 2
-                                     + TuringMachine<M>::tape.get_tape ( TuringMachine<M>::tape.tapei )];
-               if ( toi >= 0 ) {
-
-#ifdef DEBUG_SEL
-                    tois.push_back ( std::make_pair ( toi, *it ) );
+#ifdef DEBUG_SEL_RULE
+  std::vector<std::pair<int,TuringMachine<M>*>> tois ( 10 );
+  long logc {500L};
+  if ( log )
+    std::cout << "START SEL" << std::endl;
 #else
-                    tois.push_back ( toi );
+  std::vector<int> tois ( 10 );
 #endif
-                    ++it;
-               } else {
-                    // halt
-                    typename std::list<TuringMachine<M>*>::iterator dit=it;
-                    ++it;
 
-                    TMs.erase ( dit );
+  int toi {0};
 
-               }
-          }
+  long s {0}, sumo {0};
 
-          // select
+  for ( ; s < TuringMachine<M>::MAX_STEPS && !TMs.empty(); ++s )
+    {
 
-          if ( tois.size() > 0 ) {
+      tois.clear();
 
-#ifdef DEBUG_SEL
-               typename std::vector<std::pair<int,TuringMachine<M>*>>::iterator toisi=tois.begin();
-               std::advance ( toisi, std::rand() % tois.size() );
-               toi = ( *toisi ).first;
+      typename std::list<TuringMachine<M>*>::iterator it=TMs.begin();
+      while ( it != TMs.end() )
+        {
 
-               if ( log && ( --logc > 0 ) )
-                    std::cout << ( *toisi ).second << " " << TMs.size() << ":"
-                              << tois.size() << "/" << toi << std::endl;
+          toi = ( *it )->astep[ ( *it )->state * 2
+                                + TuringMachine<M>::tape.get_tape ( TuringMachine<M>::tape.tapei )];
+          if ( toi >= 0 )
+            {
+
+#ifdef DEBUG_SEL_RULE
+              tois.push_back ( std::make_pair ( toi, *it ) );
+#else
+              tois.push_back ( toi );
+#endif
+              ++it;
+            }
+          else
+            {
+              // halt
+              typename std::list<TuringMachine<M>*>::iterator dit=it;
+              ++it;
+
+              TMs.erase ( dit );
+
+            }
+        }
+
+      // select
+
+      if ( tois.size() > 0 )
+        {
+
+#ifdef DEBUG_SEL_RULE
+          typename std::vector<std::pair<int,TuringMachine<M>*>>::iterator toisi=tois.begin();
+          std::advance ( toisi, std::rand() % tois.size() );
+          toi = ( *toisi ).first;
+
+#ifdef DEBUG_SEL_RULE_PRINT
+          if ( log && ( --logc > 0 ) )
+            std::cout << ( *toisi ).second << " " << TMs.size() << ":"
+                      << tois.size() << "/" << toi << std::endl;
+#endif
+
+#ifdef DEBUG_SEL_MACHINE
+          ++smachs[ ( *toisi ).second];
+#endif
 
 #else
 
-               std::vector<int>::iterator toisi=tois.begin();
-               std::advance ( toisi, std::rand() % tois.size() );
-               toi = *toisi;
+          std::vector<int>::iterator toisi=tois.begin();
+          std::advance ( toisi, std::rand() % tois.size() );
+          toi = *toisi;
 #endif
-               sumo += tois.size();
+          sumo += tois.size();
 
-               // exec
+          // exec
 
-               for ( typename std::list<TuringMachine<M>*>::iterator it=TMs.begin(); it != TMs.end(); ++it ) {
+          for ( typename std::list<TuringMachine<M>*>::iterator it=TMs.begin(); it != TMs.end(); ++it )
+            {
 
 #ifdef STATES_OM3
-                    // OrchMach3
-                    int st = TuringMachine<M>::rules.to[toi][0];
-                    if ( ( *it )->states[st] )
-                         ( *it )->state = st;
+              // OrchMach3
+              int st = TuringMachine<M>::rules.to[toi][0];
+              if ( ( *it )->states[st] )
+                ( *it )->state = st;
 #endif
 
-                    ( *it )->state = TuringMachine<M>::rules.to[toi][0];
+              ( *it )->state = TuringMachine<M>::rules.to[toi][0];
 
-               }
+            }
 
-               ++this->nr_ones[TuringMachine<M>::
-                               tape.get_tape ( TuringMachine<M>::tape.tapei ) * 2
-                               + TuringMachine<M>::rules.to[toi][1]];
+          ++this->nr_ones[TuringMachine<M>::
+                          tape.get_tape ( TuringMachine<M>::tape.tapei ) * 2
+                          + TuringMachine<M>::rules.to[toi][1]];
 
-               TuringMachine<M>::tape.set_tape ( TuringMachine<M>::tape.tapei,
-                                                 TuringMachine<M>::rules.to[toi][1] );
-               TuringMachine<M>::tape.tapei += ( TuringMachine<M>::rules.to[toi][2] - 1 );
+          TuringMachine<M>::tape.set_tape ( TuringMachine<M>::tape.tapei,
+                                            TuringMachine<M>::rules.to[toi][1] );
+          TuringMachine<M>::tape.tapei += ( TuringMachine<M>::rules.to[toi][2] - 1 );
 
-               ++this->nof_dirs[TuringMachine<M>::rules.to[toi][2]];
+          ++this->nof_dirs[TuringMachine<M>::rules.to[toi][2]];
 
-          }
+        }
 
-     }
+    }
 
-     if ( s >= TuringMachine<M>::MAX_STEPS ) {
-          N = -1;
-          o2 = ( double ) sumo / ( double ) TuringMachine<M>::MAX_STEPS;
-     } else {
-          N = s-1;
-          o2 = ( double ) sumo / ( double ) N;
-     }
+  if ( s >= TuringMachine<M>::MAX_STEPS )
+    {
+      N = -1;
+      o2 = ( double ) sumo / ( double ) TuringMachine<M>::MAX_STEPS;
+    }
+  else
+    {
+      N = s-1;
+      o2 = ( double ) sumo / ( double ) N;
+    }
 
-     nof1s = this->nr_ones[1] - this->nr_ones[2];
+  nof1s = this->nr_ones[1] - this->nr_ones[2];
 
-     TuringMachine<M>::tape.clear ( this->nof_dirs[0], this->nof_dirs[2] );
+  TuringMachine<M>::tape.clear ( this->nof_dirs[0], this->nof_dirs[2] );
 
-     return N;
+  return N;
 }
 
 template <int M> long TuringMachine< M >::start ( void )
 {
 
-     nr_ones[0] = nr_ones[1] = nr_ones[2] = nr_ones[3] = 0;
-     nof_dirs[0] = nof_dirs[1] = nof_dirs[2] = 0L;
+  nr_ones[0] = nr_ones[1] = nr_ones[2] = nr_ones[3] = 0;
+  nof_dirs[0] = nof_dirs[1] = nof_dirs[2] = 0L;
 
-     tape.tapei = ( NOF_CELLS * 8 ) / 2;
-     state = 0;
+  tape.tapei = ( NOF_CELLS * 8 ) / 2;
+  state = 0;
 
-     int toi {0};
-     for ( long s ( 0 ); s < MAX_STEPS; ++s ) {
-          toi = astep[state * 2 + tape.get_tape ( tape.tapei )];
-          if ( toi >= 0 ) {
-               state = rules.to[toi][0];
-               ++nr_ones[tape.get_tape ( tape.tapei ) * 2 + rules.to[toi][1]];
-               tape.set_tape ( tape.tapei, rules.to[toi][1] );
-               tape.tapei += ( rules.to[toi][2] - 1 );
-               ++nof_dirs[rules.to[toi][2]];
-               // 0: <-
-               // 1: |
-               // 2: ->
-          } else {
-               // halt
-               tape.clear ( nof_dirs[0], nof_dirs[2] );
-               return nr_ones[1] - nr_ones[2];
-          }
-     }
+  int toi {0};
+  for ( long s ( 0 ); s < MAX_STEPS; ++s )
+    {
+      toi = astep[state * 2 + tape.get_tape ( tape.tapei )];
+      if ( toi >= 0 )
+        {
+          state = rules.to[toi][0];
+          ++nr_ones[tape.get_tape ( tape.tapei ) * 2 + rules.to[toi][1]];
+          tape.set_tape ( tape.tapei, rules.to[toi][1] );
+          tape.tapei += ( rules.to[toi][2] - 1 );
+          ++nof_dirs[rules.to[toi][2]];
+          // 0: <-
+          // 1: |
+          // 2: ->
+        }
+      else
+        {
+          // halt
+          tape.clear ( nof_dirs[0], nof_dirs[2] );
+          return nr_ones[1] - nr_ones[2];
+        }
+    }
 
-     tape.clear ( nof_dirs[0], nof_dirs[2] );
-     return -1;
+  tape.clear ( nof_dirs[0], nof_dirs[2] );
+  return -1;
 }
 
 template <int M> TuringMachine< M >::TuringMachine ( int nof, ... ) :nof ( nof )
 {
 
 #ifdef STATES_OM3
-     for ( int i ( 0 ); i < M; ++i )
-          states[i] = false;
+  for ( int i ( 0 ); i < M; ++i )
+    states[i] = false;
 #endif
 
-     va_list vap;
-     va_start ( vap, nof );
+  va_list vap;
+  va_start ( vap, nof );
 
-     for ( int i ( 0 ); i < M*2; ++i )
-          astep[i] = -1;
+  for ( int i ( 0 ); i < M*2; ++i )
+    astep[i] = -1;
 
-     for ( int i ( 0 ); i < nof; ++i ) {
-          int f = va_arg ( vap, int );
-          int t = va_arg ( vap, int );
+  for ( int i ( 0 ); i < nof; ++i )
+    {
+      int f = va_arg ( vap, int );
+      int t = va_arg ( vap, int );
 
-          // used only for printing and debugging purposes
-          machine[i][0] = rules.from[f][0];
-          machine[i][1] = rules.from[f][1];
-          machine[i][2] = rules.to[t][0];
-          machine[i][3] = rules.to[t][1];
-          machine[i][4] = rules.to[t][2];
+      // used only for printing and debugging purposes
+      machine[i][0] = rules.from[f][0];
+      machine[i][1] = rules.from[f][1];
+      machine[i][2] = rules.to[t][0];
+      machine[i][3] = rules.to[t][1];
+      machine[i][4] = rules.to[t][2];
 
-          astep[rules.from[f][0] * 2 + rules.from[f][1]] = t;
+      astep[rules.from[f][0] * 2 + rules.from[f][1]] = t;
 
 #ifdef STATES_OM3
-          states[rules.from[f][0]] = true;
-          states[rules.to[t][0]] = true;
+      states[rules.from[f][0]] = true;
+      states[rules.to[t][0]] = true;
 #endif
 
-     }
+    }
 
-     va_end ( vap );
+  va_end ( vap );
 
 }
 
-template <int M> void OrchMach1< M >::experiment ( void )
+template <int M> TuringMachine<M>* OrchMach1< M >::experiment ( void )
 {
+  long max_N {0L};
+  long max_nof1s {0};
+  double max_o2 {0.0};
+  double mean {0.0};
+  double max_mean {0.0};
+  double mN {0.0};
+  double mo {0.0};
+  double m1 {0.0};
+  double sum_mN {0.0};
+  double sum_mo {0.0};
+  double sum_m1 {0.0};
+  double max_mN {0.0};
+  double max_mo {0.0};
+  double max_m1 {0.0};
 
-     long max_N {0L};
-     long max_nof1s {0};
-     double max_o2 {0.0};
-     double mean {0.0};
-     double max_mean {0.0};
-     double mN {0.0};
-     double mo {0.0};
-     double m1 {0.0};
-     double sum_mN {0.0};
-     double sum_mo {0.0};
-     double sum_m1 {0.0};
-     double max_mN {0.0};
-     double max_mo {0.0};
-     double max_m1 {0.0};
+  long n {0L};
 
-     long n {0L};
-     for ( ;; ) {
-
-          start ( );
-
-          if ( N != -1 ) {
-
-               if ( N >max_N ) {
-                    max_N = N;
-                    std::cout << " N) " << *this;
-               }
-               if ( o2>max_o2 ) {
-                    max_o2 = o2;
-                    std::cout << " o) " << *this;
-               }
-               if ( nof1s>max_nof1s ) {
-                    max_nof1s = nof1s;
-                    std::cout << " 1) " << *this;
-               }
-
-               mean = ( N+max_o2+nof1s ) / 3.0;
-               if ( mean>max_mean ) {
-                    max_mean = mean;
-                    std::cout << " m) " << *this;
-               }
-
-               ++n;
-
-               sum_mN += N;
-               mN = ( double ) N / ( double ) n;
-               if ( mN>max_mN ) {
-                    max_mN = mN;
-                    std::cout << "mN) " << *this;
-               }
-
-               sum_mo += o2;
-               mo = ( double ) sum_mo / ( double ) n;
-               if ( mo>max_mo ) {
-                    max_mo = mo;
-                    std::cout << "mo) " << *this;
-               }
-
-               sum_m1 += nof1s;
-               m1 = ( double ) sum_m1 / ( double ) n;
-               if ( m1>max_m1 ) {
-                    max_m1 = m1;
-                    std::cout << "m1) " << *this;
-               }
-
-
-#ifdef DEBUG_SEL
-               if ( /*o2 == 1.00000002180426 &&*/ N == 3210381160L && nof1s == 74280L ) {
-                    log = true;
-               } else if ( N == 3272948454L && nof1s == 75001L ) {
-                    std::exit ( -1 );
-               }
-#endif
-
-
-          } else {
-               std::cout << "-1) " << *this;
-#ifdef DEBUG_INFTY
-               ;
+#ifndef DEBUG_SEL_MACHINE
+  for ( ;; )
+    {
 #else
-               std::exit ( -1 );
+  int nr_gens {0};
+  long nr_iters {0};
+  for ( ; nr_iters < 10000000 && nr_gens <20; ++nr_iters )
+    {
+#endif
+      start ( );
+
+      if ( N != -1 )
+        {
+
+          if ( N >max_N )
+            {
+              max_N = N;
+              std::cout << " N) " << *this;
+
+#ifdef DEBUG_SEL_MACHINE
+              if ( o2>2.0 )
+                {
+                  ++nr_gens;
+                  smachscopy = smachs;
+                  for ( const auto &mach : smachs )
+                    {
+                      std::cout << * ( mach.first ) << " = " << mach.second << std::endl;
+                    }
+                }
 #endif
 
-          }
+            }
+          if ( o2>max_o2 )
+            {
+              max_o2 = o2;
+              std::cout << " o) " << *this;
+#ifdef DEBUG_SEL_MACHINE
+              if ( N>100 )
+                {
+                  ++nr_gens;
+                  smachscopy = smachs;
+                  for ( const auto &mach : smachs )
+                    {
+                      std::cout << * ( mach.first ) << " = " << mach.second << std::endl;
+                    }
+                }
+#endif
+            }
+          if ( nof1s>max_nof1s )
+            {
+              max_nof1s = nof1s;
+              std::cout << " 1) " << *this;
+            }
 
-     }
+          mean = ( N+max_o2+nof1s ) / 3.0;
+          if ( mean>max_mean )
+            {
+              max_mean = mean;
+              std::cout << " m) " << *this;
+            }
 
+          ++n;
+
+          sum_mN += N;
+          mN = ( double ) N / ( double ) n;
+          if ( mN>max_mN )
+            {
+              max_mN = mN;
+              std::cout << "mN) " << *this;
+            }
+
+          sum_mo += o2;
+          mo = ( double ) sum_mo / ( double ) n;
+          if ( mo>max_mo )
+            {
+              max_mo = mo;
+              std::cout << "mo) " << *this;
+            }
+
+          sum_m1 += nof1s;
+          m1 = ( double ) sum_m1 / ( double ) n;
+          if ( m1>max_m1 )
+            {
+              max_m1 = m1;
+              std::cout << "m1) " << *this;
+            }
+
+
+#ifdef DEBUG_SEL_RULE
+          if ( /*o2 == 1.00000002180426 &&*/ N == 3210381160L && nof1s == 74280L )
+            {
+              log = true;
+            }
+          else if ( N == 3272948454L && nof1s == 75001L )
+            {
+              std::exit ( -1 );
+            }
+#endif
+
+        }
+      else
+        {
+          std::cout << "-1) " << *this;
+#ifdef DEBUG_INFTY
+          ;
+#elif defined DEBUG_SEL_MACHINE
+          throw "infty";
+#else
+          std::exit ( -1 );
+#endif
+
+        }
+
+    }
+
+#ifndef DEBUG_SEL_MACHINE
+  return nullptr;
+#else
+  /*
+  for ( const auto &mach : TMscopy )
+    std::cout << *mach << std::endl;
+  */
+  if ( smachscopy.size() > 0 )
+    {
+      TuringMachine<M>* r = nullptr;
+      if ( smachscopy.size() == TMscopy.size() )
+        {
+          auto ret = std::min_element ( smachscopy.begin(), smachscopy.end(),
+                                        [] ( const std::pair<TuringMachine<M>*, size_t>& p1,
+                                             const std::pair<TuringMachine<M>*, size_t>& p2 )
+          {
+            return p1.second < p2.second;
+          } );
+          r =  ret->first;
+        }
+      else
+        {
+          for ( const auto &mach : TMscopy )
+            {
+              if ( smachscopy.find ( mach ) == smachscopy.end() )
+                {
+                  r = mach;
+                  break;
+                }
+            }
+
+        }
+
+      smachscopy.clear();
+      return r;
+
+    }
+  return nullptr;
+#endif
 }

@@ -43,7 +43,7 @@ main ( int argc, char *argv[] )
 
      // NEITHER OrchMach1 NOR TuringMachine OBJECTS CAN BE USED IN PARALLEL
 
-     OrchMach1<5> om ( 3, &tm2,  &tm8, &tm10 );
+     OrchMach1<5> om ( 9, &tm12,  &tm14, &tm15, &tm21,  &tm22, &tm24, &tm25, &tm27, &tm29 );
 
      om.experiment();
 
