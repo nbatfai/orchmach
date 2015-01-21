@@ -9,6 +9,14 @@
 int
 main ( int argc, char *argv[] )
 {
+
+  if ( argc != 2 )
+    {
+      std::cout <<  "The filename of Turing machines must be given as the first argument."
+                << std::endl;
+      return -1;
+    }
+
   TuringMachine<5> tm12 ( 9, 0, 9,  1, 11, 2, 17, 3, 21, 4, 19, 5, 29, 6, 5,  7, 6,  8, 8 );// 26
   TuringMachine<5> tm13 ( 9, 0, 9,  1, 11, 2, 15, 3, 20, 4, 21, 5, 27, 6, 4,  7, 2,  8, 12 );// 21
   TuringMachine<5> tm14 ( 9, 0, 9,  1, 11, 2, 26, 3, 23, 4, 27, 5, 2,  7, 17, 8, 5,  9, 13 );// 19
@@ -29,7 +37,13 @@ main ( int argc, char *argv[] )
   TuringMachine<5> tm29 ( 9, 0, 16, 1, 14, 2, 18, 3, 11, 4, 27, 5, 29, 7, 27, 8, 21, 9, 12 ); // 3
   TuringMachine<5> tm30 ( 9, 0, 16, 1, 14, 2, 18, 3, 12, 4, 27, 5, 9,  6, 26, 7, 0,  8, 29 ); // 2
 
-  std::fstream machsfile ( "machs.txt", std::ios_base::in );
+  std::fstream machsfile ( argv[1], std::ios_base::in );
+
+  if ( !machsfile )
+    {
+      std::cout <<  argv[1] << " does not exist." << std::endl;
+      return -1;
+    }
 
   int nr, f1, f2, f3, f4, f5, f6, f7, f8, f9,
       t1, t2, t3, t4, t5, t6, t7, t8, t9;
