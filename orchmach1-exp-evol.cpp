@@ -67,7 +67,7 @@ main ( int argc, char *argv[] )
 
   OrchMach1<5> om ( 9, &tm12,  &tm14, &tm15, &tm21,  &tm22, &tm24, &tm25, &tm27, &tm29 );
 
-  TuringMachine<5> *last_added = nullptr;
+  TuringMachine<5> *last_added = om.back();
   int nr_generations {0};
   for ( ;; ++nr_generations )
     {
@@ -90,7 +90,7 @@ main ( int argc, char *argv[] )
               last_added = nm;
             }
           else
-            std::cout << "Oops!" <<  std::endl;
+            throw "None";
 
         }
       catch ( ... )

@@ -430,6 +430,11 @@ public:
 
 #ifdef DEBUG_SEL_MACHINE
 
+  TuringMachine<M>* back ( void )
+  {
+    return TMscopy.back();
+  }
+
   bool contains ( TuringMachine<M>* m )
   {
     return std::find ( TMscopy.begin(), TMscopy.end(), m ) != TMscopy.end();
@@ -719,7 +724,7 @@ template <int M> TuringMachine<M>* OrchMach1< M >::experiment ( void )
 #else
   int nr_gens {0};
   long nr_iters {0};
-  for ( ; nr_iters < 10000000 && nr_gens <20; ++nr_iters )
+  for ( ; nr_iters < 10000000 && nr_gens <30; ++nr_iters )
     {
 #endif
       start ( );
@@ -733,7 +738,7 @@ template <int M> TuringMachine<M>* OrchMach1< M >::experiment ( void )
               std::cout << " N) " << *this;
 
 #ifdef DEBUG_SEL_MACHINE
-              if ( o2>2.0 )
+              if ( o2>3.0 )
                 {
                   ++nr_gens;
                   smachscopy = smachs;
@@ -750,7 +755,7 @@ template <int M> TuringMachine<M>* OrchMach1< M >::experiment ( void )
               max_o2 = o2;
               std::cout << " o) " << *this;
 #ifdef DEBUG_SEL_MACHINE
-              if ( N>100 )
+              if ( N>200 )
                 {
                   ++nr_gens;
                   smachscopy = smachs;
