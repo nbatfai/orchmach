@@ -472,7 +472,8 @@ public:
               << "o2= " << om1.o2
               << " N= " << om1.N
               << " 1s= " << om1.nof1s << std::endl;
-    ;
+
+    return os;
 
   }
 
@@ -505,7 +506,7 @@ template <int M> long OrchMach1< M >::start ( void )
 
 #ifdef DEBUG_SEL_RULE
   std::vector<std::pair<int,TuringMachine<M>*>> tois ( 10 );
-  long logc {500L};
+//  long logc {500L};
   if ( log )
     std::cout << "START SEL" << std::endl;
 #else
@@ -718,6 +719,9 @@ template <int M> TuringMachine<M>* OrchMach1< M >::experiment ( void )
 
   long n {0L};
 
+  double var {0.0};
+  double max_var {100000.0};
+
 #ifndef DEBUG_SEL_MACHINE
   for ( ;; )
     {
@@ -731,6 +735,42 @@ template <int M> TuringMachine<M>* OrchMach1< M >::experiment ( void )
 
       if ( N != -1 )
         {
+
+
+#ifdef DEBUG_SEL_MACHINE_VAR
+
+          if ( o2 > 3 && N > o2*10 && smachs.size() > 1 )
+            {
+
+              //++nr_gens;
+              smachscopy = smachs;
+
+              double vmean = 0.0;
+              for ( const auto &mach : smachs )
+                {
+                  vmean += mach.second;
+                }
+              vmean /= smachs.size();
+
+              for ( const auto &mach : smachs )
+                {
+                  var += ( mach.second-vmean ) * ( mach.second-vmean );
+                }
+              var = std::sqrt ( ( 1.0/ ( smachs.size() - 1.0 ) ) * var );
+
+              if ( var < max_var )
+                {
+                  max_var = var;
+                  std::cout << " v) " << var << " " << *this;
+                  for ( const auto &mach : smachs )
+                    {
+                      std::cout << * ( mach.first ) << " = " << mach.second << std::endl;
+                    }
+
+                }
+
+            }
+#endif
 
           if ( N >max_N )
             {
@@ -750,6 +790,8 @@ template <int M> TuringMachine<M>* OrchMach1< M >::experiment ( void )
 #endif
 
             }
+
+
           if ( o2>max_o2 )
             {
               max_o2 = o2;
