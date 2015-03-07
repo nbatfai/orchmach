@@ -121,6 +121,9 @@ Version history
 #include <map>
 #include <algorithm>
 #endif
+#ifdef DEBUG_IDIM
+#include <cmath>
+#endif
 
 template <int M>
 class TransitionRules
@@ -471,7 +474,11 @@ public:
     std::cout << std::setprecision ( std::numeric_limits<double>::digits10 )
               << "o2= " << om1.o2
               << " N= " << om1.N
-              << " 1s= " << om1.nof1s << std::endl;
+              << " 1s= " << om1.nof1s 
+#ifdef DEBUG_IDIM
+              << " iD= " << std::log(om1.N)/std::log(om1.o2)
+#endif              
+              << std::endl;
 
     return os;
 

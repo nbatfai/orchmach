@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#ifdef DEBUG_IDIM
+#include <cmath>
+#endif
 
 typedef struct o2N
 {
@@ -64,6 +67,10 @@ int main ( int argc, char *argv[] )
                 <<     v.at ( i ).o2
                 << " "
                 <<     v.at ( i ).N
+#ifdef DEBUG_IDIM
+                << " "
+                << std::log ( v.at ( i ).N ) /std::log ( v.at ( i ).o2 )
+#endif
                 << std::endl;
 
 
