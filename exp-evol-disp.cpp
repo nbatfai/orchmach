@@ -69,7 +69,9 @@ int main ( int argc, char *argv[] )
                 <<     v.at ( i ).N
 #ifdef DEBUG_IDIM
                 << " "
-                << std::log ( v.at ( i ).N ) /std::log ( v.at ( i ).o2 )
+		<< (( v.at ( i ).N == -1 ) ?
+                -1:
+                std::log ( v.at ( i ).N ) /std::log ( v.at ( i ).o2 ))
 #endif
                 << std::endl;
 
